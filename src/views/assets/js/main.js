@@ -9,12 +9,31 @@ const { getPuntos,getCategorias,
         insertRegistro,
         updateRegistro,
         insertRegistroMedidor,
-        getRegistrosMedidor
+        getRegistrosMedidor,
+        getServidorMedidor
       } = require(__dirname+'/assets/js/database.js');
 
 const { data_ftp_ssh, data_rutas_app, data_vnc } = require(__dirname+'/assets/js/config.json');
 
 
+const listServer = async () => {
+
+  let getServer = await getServidorMedidor();
+  if( getServer.length > 0 ){
+
+
+    for ( let i=0; i<getServer.length;i++ ) {
+ 
+      let dirIp  = $.trim( getServer[i]['IP']);
+      let puerto = $.trim( getServer[i]['PUERTO'] ); 
+      let zona   = $.trim( getServer[i]['ZONA'] ); 
+
+      $("#server").append(` <option value='${dirIp}-${puerto}-${zona}'>${dirIp} ${puerto} ${zona}</option>`);
+    }
+    
+  }
+  $("#server").attr("disabled",false);
+}
 
 const tableListarPuntos = async () => {
   let getPDV =  await getPuntos();
@@ -35,7 +54,7 @@ const tableListarPuntos = async () => {
      let zona   = $.trim( getPDV[i]['ZONA'] ); 
 
      
-      ping.sys.probe(dirIp, function( isAlive ){
+      ping.sys.probe(dirIp, async function( isAlive ){
         estadoPing = isAlive ? ' <span class="btn btn-success estado">ON</span>':'  <span class="btn btn-danger">OFF</span>'
         let disabled ="";
 
@@ -89,13 +108,14 @@ const tableListarPuntos = async () => {
                             $("#tablePDV").DataTable({
                               "paging": false
                             });
+                              await listServer();
                            }
             
     });//Fin PING
    
    }//fin for
 
-   
+ 
 
   }//fin if
 
@@ -546,7 +566,22 @@ const iperf3 = async (event, tipo = null)=>{
   let  ipPDV              = $.trim( $(obj).data("ip") );
   let  nombrePDV          = $.trim( $(obj).data("pdv") );
   let  zona               = $.trim( $(obj).data("zona") );
-  
+  let  server             = $("#server option:selected").val().split('-');
+  let  ipServer           = $.trim(server[0]);
+  let  puerto             = $.trim(server[1]);
+  let  zona_server        = $.trim(server[2]);
+
+  /*const validTelnet = await validTelnetServer(ipServer,puerto);
+
+  if( !validTelnet ){
+    myModal.hide();
+    $("#exampleModalLabel").html( "Error");
+    $("#modalBody").html( "No se logro conectar con el servidor con la IP "+ipServer+" y puerto "+puerto);
+     myModal.show();
+    return;
+  }*/
+
+  $("#server").attr("disabled",true);
 
 
    $(obj).attr('disabled', true);
@@ -562,6 +597,16 @@ const iperf3 = async (event, tipo = null)=>{
     $(obj).parent().find('.load').html('<span style="font-size:40px;color:green;position:absolute;left:10px;">'+contador+'</span>');
     contador++;
     console.log(contador);
+    if( contador > 60 ){
+      $(obj).attr('disabled', false);
+      $(obj).parent().find('.load').hide();
+      clearInterval(intervalID);
+      $("#server").attr("disabled",false);
+      $("#exampleModalLabel").html( "Error");
+      $("#modalBody").html(" Tiempo de espera agotado "+contador+" segundos");
+      myModal.hide();
+      (!tipo ) ? myModal.show() : '';
+    }
 
    },1000);
 
@@ -574,9 +619,33 @@ const iperf3 = async (event, tipo = null)=>{
       readyTimeout: data_ftp_ssh.tiempoReconexion
     })
     .then( async function() {
+      //console.log(`telnet ${ipServer} ${puerto} `);
+      /*let validTelnet = false;
 
-  
-      await  ssh.execCommand(`iperf3 -c 172.16.20.45 -p 5002`, { cwd:'./' }).then(function(result) {
+      await ssh.execCommand(`telnet ${ipServer} ${puerto} `, { cwd:'./' }).then(function(result) {
+        console.log('STDOUT: ' + result.stdout)
+        console.log('STDERR: ' + result.stderr)
+
+          $("#server").attr("disabled",false);
+          $("#exampleModalLabel").html( "Error");
+          $("#modalBody").html(result.stdout +" <br> "+ result.stderr);
+           myModal.hide();
+           myModal.show();
+
+           if( result.stderr ){
+            $(obj).attr('disabled', false);
+            $(obj).parent().find('.load').hide();
+            clearInterval(intervalID);
+            return;
+           }else{
+            validTelnet = true;
+           }
+           
+
+      });*/
+     
+    
+      await  ssh.execCommand(`iperf3 -c ${ipServer} -p ${puerto}`, { cwd:'./' }).then(function(result) {
         console.log('STDOUT: ' + result.stdout);
         console.log('STDERR: ' + result.stderr);
         myModal.hide();
@@ -652,21 +721,24 @@ const iperf3 = async (event, tipo = null)=>{
           let hora  = now.split(" ");
 
           let fila = [{
-            FECHA        : getFechaCompleta(),
-            HORA         : hora[1],
-            IP           : ipPDV,
-            PDV          : nombrePDV,
-            ZONA         : zona,
-            TRANSFER_ENV : transEnv,
-            BITRATE_ENV  : bitraEnv,
-            TRANSFER_REC : transRec,
-            BITRATE_REC  : bitraRec,
+            FECHA         : getFechaCompleta(),
+            HORA          : hora[1],
+            IP            : ipPDV,
+            PDV           : nombrePDV,
+            ZONA          : zona,
+            TRANSFER_ENV  : transEnv,
+            BITRATE_ENV   : bitraEnv,
+            TRANSFER_REC  : transRec,
+            BITRATE_REC   : bitraRec,
+            IP_SERVER     : ipServer,
+            PUERTO_SERVER : puerto,
+            ZONA_SERVER   : zona_server
    
            }];
             
           dataJsonExcel.push( ...fila );
          
-         insertRegistroMedidor(""+getFechaCompleta(),hora[1],ipPDV, transEnv, bitraEnv, transRec, bitraRec ); 
+         insertRegistroMedidor(""+getFechaCompleta(),hora[1],ipPDV, transEnv, bitraEnv, transRec, bitraRec ,ipServer,puerto,zona_server); 
         }
         else{
           body = 'Error al obtener los datos  '+result.stderr;
@@ -691,7 +763,8 @@ const iperf3 = async (event, tipo = null)=>{
           $(obj).parent().find('.load').hide();
           clearInterval(intervalID);
       });
-     
+   
+
 
     }).catch( (error)=>{
       console.log(error);
@@ -703,6 +776,7 @@ const iperf3 = async (event, tipo = null)=>{
        $(obj).parent().find('.load').hide();
        clearInterval(intervalID);
     });
+    $("#server").attr("disabled",false);
     
   
 }
@@ -744,6 +818,8 @@ const reporteExcel = async() => {
   let fechaInicial = $("#fechaInicial").val();
   let fechaFinal   = $("#FechaFinal").val();
 
+  
+
   if( !fechaInicial || !fechaFinal )
   {
      myModal.hide();
@@ -779,6 +855,9 @@ const reporteExcel = async() => {
       let bitrateEnv  = $.trim( registrosMedidor[i]['BITRATE_ENV'] );
       let tranferRec  = $.trim( registrosMedidor[i]['TRANFER_REC'] );
       let bitrateRec  = $.trim( registrosMedidor[i]['BITRATE_REC'] );
+      let ip_server   = $.trim( registrosMedidor[i]['IP_SERVER'] );
+      let puerto      = $.trim( registrosMedidor[i]['PUERTO_SERVER'] );
+      let zona_server = $.trim( registrosMedidor[i]['ZONA_SERVER'] ); 
 
       
       let fila = [{
@@ -791,6 +870,9 @@ const reporteExcel = async() => {
          BITRATE_ENV  : bitrateEnv,
          TRANSFER_REC : tranferRec,
          BITRATE_REC  : bitrateRec,
+         IP_SERVER    : ip_server,
+         PUERTO       : puerto,
+         ZONA_SERVER  : zona_server
 
         }];
       
@@ -806,6 +888,7 @@ const reporteExcel = async() => {
     myModal.show();
   }
 
+
 }
 
 
@@ -817,6 +900,21 @@ const reporteExcel = async() => {
 $("#iperf3Todo").click( async function(e){
  
 
+  let  server             = $("#server option:selected").val().split('-');
+  let  ipServer           = $.trim(server[0]);
+  let  puerto             = $.trim(server[1]);
+  let  zona_server        = $.trim(server[2]);
+
+  /*const validTelnet = await validTelnetServer(ipServer,puerto);
+
+  if( !validTelnet ){
+    myModal.hide();
+    $("#exampleModalLabel").html( "Error");
+    $("#modalBody").html( "No se logro conectar con el servidor con la IP "+puerto+" y puerto "+puerto);
+     myModal.show();
+    return;
+  }*/
+
   if( !confirm("Realmente desea generar el todo ?") ){
     $(this).attr('disabled', false);
     return;
@@ -824,6 +922,8 @@ $("#iperf3Todo").click( async function(e){
 
   let contadorReg = 0;
   let total       = $("#listadoPDV > tr").length;
+
+  $("#server").attr("disabled",true);
 
   $(this).attr('disabled', true);
   
@@ -846,6 +946,7 @@ $("#iperf3Todo").click( async function(e){
 
   exportarExcel();
   $(this).attr('disabled', false);
+  $("#server").attr("disabled",false);
   
 });
 
@@ -858,6 +959,41 @@ const getFechaCompleta = (sep = "/") => {
   month = ( month < 10 ) ? '0'+month : month; 
   return `${day}${sep}${month}${sep}${year}`
 }
+
+
+
+
+/*const validTelnetServer = async( ip='172.16.20.45', puerto='5002' ) => {
+ 
+
+  const net = require("net");
+
+  let validTelnet = false;
+
+  try {
+    let client = await net.connect({
+      host: '172.16.20.49', 
+      port: puerto,
+      }, async()=> {
+      console.log("Telnet OK");
+      validTelnet = true;
+      /*client.write("TELNET COMMAND HERE", ()=>{
+          console.log("Telnet OK");
+          validTelnet = true;
+
+      })*/
+    /*});
+    console.log('validTelnet'+validTelnet);
+    return validTelnet;
+
+  } catch (error) {
+    validTelnet = false;
+    console.log(error + 'Error al ejecutar telnet');
+  }
+
+
+}*/
+
 
 
 

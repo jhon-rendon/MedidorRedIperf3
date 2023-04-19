@@ -111,10 +111,10 @@ const dbConnection = async() => {
 
 
 
-  const insertRegistroMedidor = async ( fecha,hora,ip, transEnv, bitraEnv, transRec, bitraERec ) => {
+  const insertRegistroMedidor = async ( fecha,hora,ip, transEnv, bitraEnv, transRec, bitraERec , ipserver, puerto , zona_server) => {
     return new Promise((resolve, reject)=>{
       
-    let sql = "INSERT INTO actualizador.medidor (FECHA, HORA, IP, TRANFER_ENV, BITRATE_ENV, TRANFER_REC, BITRATE_REC)  VALUES ( '"+fecha+"', '"+hora+"', '"+ip+"', '"+transEnv+"', '"+bitraEnv+"', '"+transRec+"','"+bitraERec+"')";
+    let sql = "INSERT INTO actualizador.medidor (FECHA, HORA, IP, TRANFER_ENV, BITRATE_ENV, TRANFER_REC, BITRATE_REC , IP_SERVER, PUERTO_SERVER, ZONA_SERVER)  VALUES ( '"+fecha+"', '"+hora+"', '"+ip+"', '"+transEnv+"', '"+bitraEnv+"', '"+transRec+"','"+bitraERec+"','"+ipserver+"','"+puerto+"','"+zona_server+"')";
             connection.query(sql,  (error, rows)=>{
           if(error){
               return reject(error);
@@ -137,7 +137,11 @@ const dbConnection = async() => {
             medidor.TRANFER_ENV, 
             medidor.BITRATE_ENV, 
             medidor.TRANFER_REC, 
-            medidor.BITRATE_REC
+            medidor.BITRATE_REC,
+            medidor.IP_SERVER,
+            medidor.PUERTO_SERVER,
+            medidor.ZONA_SERVER
+            
         FROM
             puntos,
             medidor
@@ -148,11 +152,27 @@ const dbConnection = async() => {
           if(error){
               return reject(error);
           }
-          console.log('Listado de registros Medido - Cantidad '+rows.length);
+          console.log('Listado de registros Medidor - Cantidad '+rows.length);
           return resolve(rows);
       });
   });
   };
+
+
+  const getServidorMedidor = async () => {
+    return new Promise((resolve, reject)=>{
+      connection.query(` SELECT IP,PUERTO,ZONA,DESCRIPCION FROM servidor_medidor`,  (error, rows)=>{
+          if(error){
+              return reject(error);
+          }
+          console.log('Listado de registros SERVIDOR MEDIDOR - Cantidad '+rows.length);
+          return resolve(rows);
+      });
+  });
+  };
+
+
+
 
 
 
@@ -169,5 +189,6 @@ const dbConnection = async() => {
    insertRegistro,
    updateRegistro,
    insertRegistroMedidor,
-   getRegistrosMedidor
+   getRegistrosMedidor,
+   getServidorMedidor
  } 
