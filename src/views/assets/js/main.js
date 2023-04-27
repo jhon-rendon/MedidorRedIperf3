@@ -49,9 +49,10 @@ const tableListarPuntos = async () => {
 
    for ( let i=0; i<getPDV.length;i++ ) {
  
-     let dirIp  = $.trim( getPDV[i]['IP']);
-     let nombre = $.trim( getPDV[i]['NOMBRE'] ); 
-     let zona   = $.trim( getPDV[i]['ZONA'] ); 
+     let dirIp    = $.trim( getPDV[i]['IP']);
+     let nombre   = $.trim( getPDV[i]['NOMBRE'] ); 
+     let zona     = $.trim( getPDV[i]['ZONA'] ); 
+     let conexion = $.trim( getPDV[i]['CONEXION'] ); 
 
      
       ping.sys.probe(dirIp, async function( isAlive ){
@@ -67,6 +68,7 @@ const tableListarPuntos = async () => {
                                     <td class='dirIP'>${dirIp}</td>
                                     <td>${zona}</td> 
                                     <td>${nombre}</td> 
+                                    <td>${conexion}</td>
                                     <!--<td class='horaInicio'></td>
                                     <td class='horaFinal'></td>-->
                                     <td >
@@ -851,28 +853,42 @@ const reporteExcel = async() => {
       let zona        = $.trim( registrosMedidor[i]['ZONA'] ); 
       let fecha       = $.trim( registrosMedidor[i]['FECHA'] ); 
       let hora        = $.trim( registrosMedidor[i]['HORA'] );
-      let tranferEnv  = $.trim( registrosMedidor[i]['TRANFER_ENV'] );
-      let bitrateEnv  = $.trim( registrosMedidor[i]['BITRATE_ENV'] );
-      let tranferRec  = $.trim( registrosMedidor[i]['TRANFER_REC'] );
-      let bitrateRec  = $.trim( registrosMedidor[i]['BITRATE_REC'] );
+      let tranferEnv  = $.trim( registrosMedidor[i]['TRANFER_ENV'] ).split(' ');
+      let bitrateEnv  = $.trim( registrosMedidor[i]['BITRATE_ENV'] ).split(' ');
+      let tranferRec  = $.trim( registrosMedidor[i]['TRANFER_REC'] ).split(' ');
+      let bitrateRec  = $.trim( registrosMedidor[i]['BITRATE_REC'] ).split(' ');
       let ip_server   = $.trim( registrosMedidor[i]['IP_SERVER'] );
       let puerto      = $.trim( registrosMedidor[i]['PUERTO_SERVER'] );
       let zona_server = $.trim( registrosMedidor[i]['ZONA_SERVER'] ); 
 
+
+      tranferEnv =  ( tranferEnv[1].includes('KBytes') ) ? ( Number( tranferEnv[0] ) / 1000)   :
+                    ( tranferEnv[1].includes('GBytes') ) ? ( Number( tranferEnv[0] ) *1000 )   : tranferEnv[0].replace('.',',');
+
+      bitrateEnv =  ( bitrateEnv[1].includes('Kbits') )  ? ( Number( bitrateEnv[0] ) / 1000 )  :  
+                    ( bitrateEnv[1].includes('GBits') )  ? ( Number( bitrateEnv[0] ) * 1000 )  : bitrateEnv[0].replace('.',',');
+
+      tranferRec =  ( tranferRec[1].includes('KBytes') ) ? ( Number( tranferRec[0] ) / 1000)   :  
+                    ( tranferRec[1].includes('GBytes') ) ? ( Number( tranferRec[0] ) *1000 )   : tranferRec[0].replace('.',',');
+
+
+      bitrateRec =  ( bitrateRec[1].includes('Kbits') )  ? ( Number( bitrateRec[0] ) / 1000 )  :   
+                    ( bitrateRec[1].includes('GBits') )  ? ( Number( bitrateRec[0] ) * 1000 )  : bitrateRec[0].replace('.',',');
+
       
       let fila = [{
-         FECHA        : fecha,
-         HORA         : hora,
-         IP           : dirIp,
-         PDV          : nombre,
-         ZONA         : zona,
-         TRANSFER_ENV : tranferEnv,
-         BITRATE_ENV  : bitrateEnv,
-         TRANSFER_REC : tranferRec,
-         BITRATE_REC  : bitrateRec,
-         IP_SERVER    : ip_server,
-         PUERTO       : puerto,
-         ZONA_SERVER  : zona_server
+         FECHA               : fecha,
+         HORA                : hora,
+         IP                  : dirIp,
+         PDV                 : nombre,
+         ZONA                : zona,
+         TRANSFER_ENV_MBytes : tranferEnv,
+         BITRATE_ENV_Mbits   : bitrateEnv,
+         TRANSFER_REC_MBytes : tranferRec,
+         BITRATE_REC_Mbits   : bitrateRec,
+         IP_SERVER           : ip_server,
+         PUERTO              : puerto,
+         ZONA_SERVER         : zona_server
 
         }];
       
