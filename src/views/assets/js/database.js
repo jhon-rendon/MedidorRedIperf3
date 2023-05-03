@@ -119,6 +119,7 @@ const dbConnection = async() => {
           if(error){
               return reject(error);
           }
+          console.log(sql);
           console.log("Registro Satisfactorio");
           return resolve(true);
       });

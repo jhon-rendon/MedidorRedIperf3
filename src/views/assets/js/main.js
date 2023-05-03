@@ -871,7 +871,6 @@ const reporteExcel = async() => {
       tranferRec =  ( tranferRec[1].includes('KBytes') ) ? ( Number( tranferRec[0] ) / 1000)   :  
                     ( tranferRec[1].includes('GBytes') ) ? ( Number( tranferRec[0] ) *1000 )   : tranferRec[0].replace('.',',');
 
-
       bitrateRec =  ( bitrateRec[1].includes('Kbits') )  ? ( Number( bitrateRec[0] ) / 1000 )  :   
                     ( bitrateRec[1].includes('GBits') )  ? ( Number( bitrateRec[0] ) * 1000 )  : bitrateRec[0].replace('.',',');
 
@@ -971,7 +970,8 @@ const getFechaCompleta = (sep = "/") => {
   let day = today.getDate();
   let month = today.getMonth() + 1;
   let year = today.getFullYear();
-
+  
+  day   = ( day < 10 ) ? '0'+day : day; 
   month = ( month < 10 ) ? '0'+month : month; 
   return `${day}${sep}${month}${sep}${year}`
 }
