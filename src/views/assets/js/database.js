@@ -114,7 +114,7 @@ const dbConnection = async() => {
   const insertRegistroMedidor = async ( fecha,hora,ip, transEnv, bitraEnv, transRec, bitraERec , ipserver, puerto , zona_server) => {
     return new Promise((resolve, reject)=>{
       
-    let sql = "INSERT INTO actualizador.medidor (FECHA, HORA, IP, TRANFER_ENV, BITRATE_ENV, TRANFER_REC, BITRATE_REC , IP_SERVER, PUERTO_SERVER, ZONA_SERVER)  VALUES ( '"+fecha+"', '"+hora+"', '"+ip+"', '"+transEnv+"', '"+bitraEnv+"', '"+transRec+"','"+bitraERec+"','"+ipserver+"','"+puerto+"','"+zona_server+"')";
+    let sql = "INSERT INTO actualizador.medidor (FECHA, HORA, IP, TRANFER_ENV, BITRATE_ENV, TRANFER_REC, BITRATE_REC , IP_SERVER, PUERTO_SERVER, ZONA_SERVER)  VALUES ( STR_TO_DATE( '"+fecha+"', '%d/%m/%Y'), '"+hora+"', '"+ip+"', '"+transEnv+"', '"+bitraEnv+"', '"+transRec+"','"+bitraERec+"','"+ipserver+"','"+puerto+"','"+zona_server+"')";
             connection.query(sql,  (error, rows)=>{
           if(error){
               return reject(error);
@@ -133,7 +133,7 @@ const dbConnection = async() => {
             puntos.IP, 
             puntos.NOMBRE, 
             puntos.ZONA, 
-            medidor.FECHA, 
+            date_format( medidor.FECHA, '%d/%m/%Y')  FECHA, 
             medidor.HORA, 
             medidor.TRANFER_ENV, 
             medidor.BITRATE_ENV, 
@@ -148,12 +148,13 @@ const dbConnection = async() => {
             medidor
         WHERE
       puntos.IP = medidor.IP 
-      AND fecha BETWEEN '${fechaInicial}' and '${fechaFinal}'
+      AND fecha BETWEEN STR_TO_DATE( '${fechaInicial}', '%d/%m/%Y') and STR_TO_DATE( '${fechaFinal}', '%d/%m/%Y')
       `,  (error, rows)=>{
           if(error){
               return reject(error);
           }
           console.log('Listado de registros Medidor - Cantidad '+rows.length);
+       
           return resolve(rows);
       });
   });

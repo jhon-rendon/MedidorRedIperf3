@@ -841,7 +841,7 @@ const reporteExcel = async() => {
 
 
   let registrosMedidor = await getRegistrosMedidor( fechaInicial, fechaFinal );
-
+  
   
   if( registrosMedidor.length > 0 ){
 
@@ -863,16 +863,23 @@ const reporteExcel = async() => {
 
 
       tranferEnv =  ( tranferEnv[1].includes('KBytes') ) ? ( Number( tranferEnv[0] ) / 1000)   :
-                    ( tranferEnv[1].includes('GBytes') ) ? ( Number( tranferEnv[0] ) *1000 )   : tranferEnv[0].replace('.',',');
+                    ( tranferEnv[1].includes('GBytes') ) ? ( Number( tranferEnv[0] ) *1000 )   : Number( tranferEnv[0] );
 
       bitrateEnv =  ( bitrateEnv[1].includes('Kbits') )  ? ( Number( bitrateEnv[0] ) / 1000 )  :  
-                    ( bitrateEnv[1].includes('GBits') )  ? ( Number( bitrateEnv[0] ) * 1000 )  : bitrateEnv[0].replace('.',',');
+                    ( bitrateEnv[1].includes('GBits') )  ? ( Number( bitrateEnv[0] ) * 1000 )  : Number( bitrateEnv[0] );
 
       tranferRec =  ( tranferRec[1].includes('KBytes') ) ? ( Number( tranferRec[0] ) / 1000)   :  
-                    ( tranferRec[1].includes('GBytes') ) ? ( Number( tranferRec[0] ) *1000 )   : tranferRec[0].replace('.',',');
+                    ( tranferRec[1].includes('GBytes') ) ? ( Number( tranferRec[0] ) *1000 )   : Number(tranferRec[0]);///tranferRec[0].replace(',',',');
 
       bitrateRec =  ( bitrateRec[1].includes('Kbits') )  ? ( Number( bitrateRec[0] ) / 1000 )  :   
-                    ( bitrateRec[1].includes('GBits') )  ? ( Number( bitrateRec[0] ) * 1000 )  : bitrateRec[0].replace('.',',');
+                    ( bitrateRec[1].includes('GBits') )  ? ( Number( bitrateRec[0] ) * 1000 )  : Number( bitrateRec[0]);//.replace(',',',');
+
+        
+      bitrateRec = bitrateRec.toLocaleString("en-US");
+      tranferEnv = tranferEnv.toLocaleString("en-US");
+      bitrateEnv = bitrateEnv.toLocaleString("en-US");
+      tranferRec = tranferRec.toLocaleString("en-US");
+     
 
       
       let fila = [{
